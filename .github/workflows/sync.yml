@@ -1,0 +1,34 @@
+name: Sync Fork (Force)
+
+on:
+  schedule:
+    - cron: "0 * * * *"   
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sync-bot branch
+        uses: actions/checkout@v4
+        with:
+          ref: sync-bot
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream
+        run: |
+          git remote add upstream https://github.com/stakeflow/network-registry.git
+          git fetch upstream
+
+      - name: Sync main branch with upstream
+        run: |
+          git checkout main || git checkout -b main
+          git reset --hard upstream/main
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push origin main --force
